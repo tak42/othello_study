@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
+import { useState } from 'react'
 import styled from 'styled-components'
 
 const Container = styled.div`
@@ -10,6 +11,7 @@ const Container = styled.div`
   height: 100vh;
   min-height: 100vh;
   padding: 0 0.5rem;
+  background-color: green;
 `
 
 const Main = styled.main`
@@ -66,6 +68,19 @@ const Grid = styled.div`
     width: 100%;
   }
 `
+const Block = styled.div`
+  height: 100px;
+  width: 100px;
+  border: 1px solid white;
+`
+
+const Stone = styled.div<{ val: number }>`
+  background-color: ${(props) => (props.val === 1 ? 'white' : 'black')};
+  border-radius: 50%;
+  height: 60px;
+  width: 60px;
+  margin: 1rem;
+`
 
 const Card = styled.a`
   width: 45%;
@@ -117,8 +132,30 @@ const Logo = styled.span`
   height: 1em;
   margin-left: 0.5rem;
 `
-
 const Home: NextPage = () => {
+  // prettier-ignore
+  const [board, setBoard] = useState([
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,1,2,0,0,0],
+    [0,0,0,2,1,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0]
+  ])
+  const [turnColor, setTurnColor] = useState(1)
+
+  const setStone = (event: React.MouseEvent<HTMLElement>) => {
+    console.log('stone')
+    return
+  }
+
+  const onClick = (x: number, y: number) => {
+    const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
+    newBoard[y][x] = 1
+    setBoard(newBoard) // boardに変更を反映
+  }
   return (
     <Container>
       <Head>
@@ -128,49 +165,17 @@ const Home: NextPage = () => {
       </Head>
 
       <Main>
-        <Title>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </Title>
-
-        <Description>
-          Get started by editing <Code>pages/index.js</Code>
-        </Description>
-
         <Grid>
-          <Card href="https://nextjs.org/docs">
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </Card>
-
-          <Card href="https://nextjs.org/learn">
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </Card>
-
-          <Card href="https://github.com/vercel/next.js/tree/master/examples">
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </Card>
-
-          <Card href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app">
-            <h2>Deploy &rarr;</h2>
-            <p>Instantly deploy your Next.js site to a public URL with Vercel.</p>
-          </Card>
+          {board.map((row, x) =>
+            row.map((color, y) => (
+              <Block key={`${x}-${y}`} onClick={() => onClick(x, y)}>
+                {/* {x}, {y} */}
+                {color > 0 && <Stone val={color} />}
+              </Block>
+            ))
+          )}
         </Grid>
       </Main>
-
-      <Footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Logo>
-            <img src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </Logo>
-        </a>
-      </Footer>
     </Container>
   )
 }
