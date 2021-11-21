@@ -75,7 +75,6 @@ const Block = styled.div`
 `
 
 const Stone = styled.div<{ val: number }>`
-  width: 100px;
   height: 60px;
   margin: 1rem;
   background-color: ${(props) => (props.val === 1 ? 'white' : 'black')};
