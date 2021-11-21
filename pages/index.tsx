@@ -69,17 +69,17 @@ const Grid = styled.div`
   }
 `
 const Block = styled.div`
-  height: 100px;
   width: 100px;
+  height: 100px;
   border: 1px solid white;
 `
 
 const Stone = styled.div<{ val: number }>`
+  width: 100px;
+  height: 60px;
+  margin: 1rem;
   background-color: ${(props) => (props.val === 1 ? 'white' : 'black')};
   border-radius: 50%;
-  height: 60px;
-  width: 60px;
-  margin: 1rem;
 `
 
 const Card = styled.a`
@@ -146,14 +146,11 @@ const Home: NextPage = () => {
   ])
   const [turnColor, setTurnColor] = useState(1)
 
-  const setStone = (event: React.MouseEvent<HTMLElement>) => {
-    console.log('stone')
-    return
-  }
-
   const onClick = (x: number, y: number) => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
-    newBoard[y][x] = 1
+    newBoard[x][y] = turnColor
+    const setColorNumber: number = turnColor === 1 ? 2 : 1
+    setTurnColor(setColorNumber)
     setBoard(newBoard) // boardに変更を反映
   }
   return (
@@ -165,6 +162,7 @@ const Home: NextPage = () => {
       </Head>
 
       <Main>
+        <h1>{turnColor === 1 ? '白の番です。' : '黒の番です。'}</h1>
         <Grid>
           {board.map((row, x) =>
             row.map((color, y) => (
