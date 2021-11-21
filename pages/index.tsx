@@ -146,14 +146,9 @@ const Home: NextPage = () => {
   ])
   const [turnColor, setTurnColor] = useState(1)
 
-  const setStone = (event: React.MouseEvent<HTMLElement>) => {
-    console.log('stone')
-    return
-  }
-
   const onClick = (x: number, y: number) => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
-    newBoard[y][x] = 1
+    newBoard[x][y] = 1
     setBoard(newBoard) // boardに変更を反映
   }
   return (
