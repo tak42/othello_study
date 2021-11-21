@@ -148,7 +148,9 @@ const Home: NextPage = () => {
 
   const onClick = (x: number, y: number) => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
-    newBoard[x][y] = 1
+    newBoard[x][y] = turnColor
+    const setColorNumber: number = turnColor === 1 ? 2 : 1
+    setTurnColor(setColorNumber)
     setBoard(newBoard) // boardに変更を反映
   }
   return (
