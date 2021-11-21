@@ -162,6 +162,7 @@ const Home: NextPage = () => {
       </Head>
 
       <Main>
+        <h1>{turnColor === 1 ? '白の番です。' : '黒の番です。'}</h1>
         <Grid>
           {board.map((row, x) =>
             row.map((color, y) => (
