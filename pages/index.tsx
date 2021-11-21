@@ -69,16 +69,16 @@ const Grid = styled.div`
   }
 `
 const Block = styled.div`
-  height: 100px;
   width: 100px;
+  height: 100px;
   border: 1px solid white;
 `
 
 const Stone = styled.div<{ val: number }>`
   background-color: ${(props) => (props.val === 1 ? 'white' : 'black')};
-  border-radius: 50%;
+  width: 100px;
   height: 60px;
-  width: 60px;
+  border-radius: 50%;
   margin: 1rem;
 `
 
