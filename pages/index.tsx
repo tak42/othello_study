@@ -75,11 +75,11 @@ const Block = styled.div`
 `
 
 const Stone = styled.div<{ val: number }>`
-  background-color: ${(props) => (props.val === 1 ? 'white' : 'black')};
   width: 100px;
   height: 60px;
-  border-radius: 50%;
   margin: 1rem;
+  background-color: ${(props) => (props.val === 1 ? 'white' : 'black')};
+  border-radius: 50%;
 `
 
 const Card = styled.a`
