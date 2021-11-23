@@ -147,9 +147,24 @@ const Home: NextPage = () => {
 
   const onClick = (x: number, y: number) => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
+    const nextColor: number = turnColor === 1 ? 2 : 1
+    let isPossible = false
+    // ひっくり返せる石はあるかチェック
+    // 上下,左右,斜め
+    for (let i = x - 1; i <= x + 1; i++) {
+      for (let l = y - 1; l <= y + 1; l++) {
+        if (newBoard[i][l] === nextColor) {
+          isPossible = true
+        }
+      }
+    }
+    if (!isPossible) {
+      // ひっくり返せる石はないのでルール上打てない
+      console.log('ここには打てません。')
+      return false
+    }
     newBoard[x][y] = turnColor
-    const setColorNumber: number = turnColor === 1 ? 2 : 1
-    setTurnColor(setColorNumber)
+    setTurnColor(nextColor)
     setBoard(newBoard) // boardに変更を反映
   }
   return (
@@ -166,7 +181,7 @@ const Home: NextPage = () => {
           {board.map((row, x) =>
             row.map((color, y) => (
               <Block key={`${x}-${y}`} onClick={() => onClick(x, y)}>
-                {/* {x}, {y} */}
+                {x}, {y}
                 {color > 0 && <Stone val={color} />}
               </Block>
             ))
