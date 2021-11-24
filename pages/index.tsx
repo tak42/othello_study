@@ -149,7 +149,7 @@ const Home: NextPage = () => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
     const nextColor: number = turnColor === 1 ? 2 : 1
     let isPossible = false
-    // ひっくり返せる石はあるかチェック
+    // 周りの９マスにひっくり返せる石はあるかチェック
     // 上下,左右,斜め
     for (let i = x - 1; i <= x + 1; i++) {
       for (let l = y - 1; l <= y + 1; l++) {
@@ -164,8 +164,44 @@ const Home: NextPage = () => {
       return false
     }
     newBoard[x][y] = turnColor
+    // 同じ色の石の位置を抽出
+    const objArray: { row: number; col: number }[] = []
+    for (let i = 0; i < 8; i++) {
+      for (let l = 0; l < 8; l++) {
+        if (newBoard[i][l] === turnColor) {
+          objArray.push({ row: i, col: l })
+        }
+      }
+    }
+    let turnOverLen = 0 // 始点から見た対象の石をひっくり返す長さ
+    let startIdx = 0 // 始点
+    let isChanged = false // ひっくり返したかどうか
+    for (const item of objArray) {
+      if (item.row === x) {
+        // 同じ行内の石をひっくり返す
+        turnOverLen = y < item.col ? item.col - y : y - item.col // 絶対値を返すように後程修正
+        startIdx = y < item.col ? y : item.col
+        for (let i = startIdx; i < turnOverLen + startIdx; i++) {
+          if (newBoard[x][i] === nextColor) {
+            newBoard[x][i] = turnColor
+            isChanged = true
+          }
+        }
+      }
+      if (item.col === y) {
+        // 同じ列内の位置にある石をひっくり返す
+        turnOverLen = x < item.row ? item.row - x : x - item.row
+        startIdx = x < item.row ? x : item.row
+        for (let i = startIdx; i < turnOverLen + startIdx; i++) {
+          if (newBoard[i][y] === nextColor) {
+            newBoard[i][y] = turnColor
+            isChanged = true
+          }
+        }
+      }
+    }
+    if (isChanged) setBoard(newBoard) // boardに変更を反映
     setTurnColor(nextColor)
-    setBoard(newBoard) // boardに変更を反映
   }
   return (
     <Container>
