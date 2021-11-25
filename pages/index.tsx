@@ -147,13 +147,13 @@ const Home: NextPage = () => {
 
   const onClick = (x: number, y: number) => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
-    const nextColor: number = turnColor === 1 ? 2 : 1
+    const reverseColor: number = turnColor === 1 ? 2 : 1
     let isPossible = false
     // 周りの９マスにひっくり返せる石はあるかチェック
     // 上下,左右,斜め
     for (let i = x - 1; i <= x + 1; i++) {
       for (let l = y - 1; l <= y + 1; l++) {
-        if (newBoard[i][l] === nextColor) {
+        if (newBoard[i][l] === reverseColor) {
           isPossible = true
         }
       }
@@ -163,45 +163,88 @@ const Home: NextPage = () => {
       console.log('ここには打てません。')
       return false
     }
-    newBoard[x][y] = turnColor
+    // newBoard[x][y] = turnColor
     // 同じ色の石の位置を抽出
-    const objArray: { row: number; col: number }[] = []
+    const stonePositionList: { row: number; col: number }[] = [] // 同じ色の石の位置を保持
     for (let i = 0; i < 8; i++) {
       for (let l = 0; l < 8; l++) {
         if (newBoard[i][l] === turnColor) {
-          objArray.push({ row: i, col: l })
+          stonePositionList.push({ row: i, col: l })
         }
       }
     }
     let turnOverLen = 0 // 始点から見た対象の石をひっくり返す長さ
     let startIdx = 0 // 始点
     let isChanged = false // ひっくり返したかどうか
-    for (const item of objArray) {
-      if (item.row === x) {
+    for (const item of stonePositionList) {
+      console.log('item', item.row, item.col)
+      if (item.row === x && item.col !== y) {
         // 同じ行内の石をひっくり返す
         turnOverLen = y < item.col ? item.col - y : y - item.col // 絶対値を返すように後程修正
         startIdx = y < item.col ? y : item.col
         for (let i = startIdx; i < turnOverLen + startIdx; i++) {
-          if (newBoard[x][i] === nextColor) {
+          if (newBoard[x][i] === reverseColor) {
+            console.log('row_turn', x, i)
             newBoard[x][i] = turnColor
             isChanged = true
           }
         }
       }
-      if (item.col === y) {
+      if (item.row !== x && item.col === y) {
         // 同じ列内の位置にある石をひっくり返す
         turnOverLen = x < item.row ? item.row - x : x - item.row
         startIdx = x < item.row ? x : item.row
         for (let i = startIdx; i < turnOverLen + startIdx; i++) {
-          if (newBoard[i][y] === nextColor) {
+          if (newBoard[i][y] === reverseColor) {
+            console.log('col_turn', i, y)
             newBoard[i][y] = turnColor
             isChanged = true
           }
         }
       }
+      if (Math.abs(x - item.row) === Math.abs(y - item.col)) {
+        // 斜めをひっくり返す
+        if (item.row > x) {
+          // 左斜め下 x+ y-
+          // 右斜め下 x+ y+
+          turnOverLen = Math.abs(x - item.row)
+          startIdx = x
+          let count = 0
+          let colIdx = 0
+          for (let i = startIdx; i < turnOverLen + startIdx; i++) {
+            colIdx = y > item.col ? y - count : y + count
+            if (newBoard[i][colIdx] === reverseColor) {
+              newBoard[i][colIdx] = turnColor
+              console.log('diagonal_under_turn', i, colIdx)
+              isChanged = true
+            }
+            count += 1
+          }
+        }
+        if (item.row < x) {
+          // 左斜め上 x- y-
+          // 右斜め上 x- y+
+          turnOverLen = Math.abs(x - item.row)
+          startIdx = item.row
+          let count = 0
+          let colIdx = 0
+          for (let i = startIdx; i < turnOverLen + startIdx; i++) {
+            colIdx = y < item.col ? y + count : y - count // バグあり
+            // item(2,4)の状況で(2,5)の石をひっくり返している
+            if (newBoard[i][colIdx] === reverseColor) {
+              console.log('diagonal_up_turn', i, colIdx)
+              newBoard[i][colIdx] = turnColor
+              isChanged = true
+            }
+            count += 1
+          }
+        }
+      }
     }
-    if (isChanged) setBoard(newBoard) // boardに変更を反映
-    setTurnColor(nextColor)
+    if (isChanged) {
+      setBoard(newBoard) // boardに変更を反映
+      setTurnColor(reverseColor)
+    }
   }
   return (
     <Container>
