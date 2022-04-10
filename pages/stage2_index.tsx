@@ -52,28 +52,28 @@ const Stone = styled.div<{ val: number }>`
 
 type Cell = { row: number; col: number }
 const Home: NextPage = () => {
-  // prettier-ignore
-  // const [board, setBoard] = useState([
-  //   [0,0,0,0,0,0,0,0],
-  //   [0,0,0,0,0,0,0,0],
-  //   [0,0,0,0,0,0,0,0],
-  //   [0,0,0,1,2,0,0,0],
-  //   [0,0,0,2,1,0,0,0],
-  //   [0,0,0,0,0,0,0,0],
-  //   [0,0,0,0,0,0,0,0],
-  //   [0,0,0,0,0,0,0,0]
-  // ])
-  const [board, setBoard] = useState([
-    [1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1],
-    [0,0,0,0,2,1,1,1],
-  ])
+  const [structure, setStructure] = useState({ row: 8, col: 8 })
+
+  const boardCreate = () => {
+    const board = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
+    board[3][3] = 1
+    board[3][4] = 2
+    board[4][3] = 2
+    board[4][4] = 1
+    return board
+  }
+
+  const [board, setBoard] = useState(boardCreate)
+
+  const { whiteCount, blackCount } = useMemo(() => {
+    return {
+      whiteCount: board.flat().filter((x) => x === 2).length,
+      blackCount: board.flat().filter((x) => x === 1).length,
+    }
+  }, [board])
+
   const [turnColor, setTurnColor] = useState(1)
+
   const [passCount, setPassCount] = useState(0)
 
   const reverseColor: number = useMemo(() => {
@@ -138,21 +138,6 @@ const Home: NextPage = () => {
     return !OneDimensional.includes(1)
   }, [puttables])
 
-  const { whiteCount, blackCount } = useMemo(() => {
-    let blCo = 0 // 黒の石の数
-    let whCo = 0 // 白の石の数
-    for (let x = 0; x < 8; x++) {
-      for (let y = 0; y < 8; y++) {
-        if (board[x][y] === 2) {
-          whCo += 1
-        }
-        if (board[x][y] === 1) {
-          blCo += 1
-        }
-      }
-    }
-    return { whiteCount: whCo, blackCount: blCo }
-  }, [board])
   useEffect(() => {
     const pCnt: number = isPass ? passCount + 1 : 0
     console.log(pCnt)
