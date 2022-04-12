@@ -80,22 +80,12 @@ const Home: NextPage = () => {
     return turnColor === 1 ? 2 : 1
   }, [turnColor])
 
+  // prettier-ignore
+  const directions: number[][] = [
+    [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
+  ]
   const puttables = useMemo(() => {
-    // prettier-ignore
-    const rtnList = [
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0]
-    ]
-    // prettier-ignore
-    const directions: number[][] = [
-      [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
-    ]
+    const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
     const candidates: Cell[] = []
     // 石を置く候補となる条件
     // 1.何も置かれていない
@@ -165,25 +155,10 @@ const Home: NextPage = () => {
   }, [whiteCount, blackCount])
 
   const resetBoard = () => {
-    // prettier-ignore
-    const newBoard: number[][] = [
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,1,2,0,0,0],
-      [0,0,0,2,1,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0]
-    ]
-    setBoard(newBoard)
+    setBoard(boardCreate)
   }
   const onClick = (x: number, y: number) => {
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
-    // prettier-ignore
-    const directions: number[][] = [
-      [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
-    ]
     const candidates: Cell[] = []
     for (const direction of directions) {
       for (let n = 1; n < 8; n++) {
