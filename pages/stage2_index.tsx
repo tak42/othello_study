@@ -87,39 +87,40 @@ const Home: NextPage = () => {
   const puttables = useMemo(() => {
     const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
     const candidates: Cell[] = []
-    // 石を置く候補となる条件
-    // 1.何も置かれていない
-    // 2.８方向のどこかに石がある
-    // 3.石が置かれている方向に２種類の石がある
-    // 4.石を置くと、隣り合う石がひっくり返る
-    for (let x = 0; x < 8; x++) {
-      for (let y = 0; y < 8; y++) {
-        if (board[x][y] === 0) {
-          for (const direction of directions) {
-            for (let n = 1; n < 8; n++) {
-              const newX = x + direction[0] * n
-              const newY = y + direction[1] * n
-              if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
-              if (board[newX][newY] === reverseColor) {
-                candidates.push({ row: newX, col: newY })
-              } else if (board[newX][newY] === turnColor) {
-                candidates.push({ row: newX, col: newY })
-                break
-              } else {
-                break
-              }
-            }
-            if (candidates.length > 1) {
-              const lastCell = candidates[candidates.length - 1]
-              if (board[lastCell.row][lastCell.col] === turnColor) {
-                rtnList[x][y] = 1
-              }
-            }
-            candidates.splice(0, candidates.length)
-          }
+    const zeroCell = board
+      .flat()
+      .filter((x) => x === 0)
+      .map((elm, idx) => {
+        return { row: idx / 10, col: idx % 10 }
+      })
+    for (const direction of directions) {
+      for (let n = 1; n < 8; n++) {
+        const newX = x + direction[0] * n
+        const newY = y + direction[1] * n
+        if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
+        if (board[newX][newY] === reverseColor) {
+          candidates.push({ row: newX, col: newY })
+        } else if (board[newX][newY] === turnColor) {
+          candidates.push({ row: newX, col: newY })
+          break
+        } else {
+          break
         }
       }
+      if (candidates.length > 1) {
+        const lastCell = candidates[candidates.length - 1]
+        if (board[lastCell.row][lastCell.col] === turnColor) {
+          rtnList[x][y] = 1
+        }
+      }
+      candidates.splice(0, candidates.length)
     }
+    // for (let x = 0; x < 8; x++) {
+    //   for (let y = 0; y < 8; y++) {
+    //     if (board[x][y] === 0) {
+    //     }
+    //   }
+    // }
     return rtnList
   }, [board, turnColor])
 
