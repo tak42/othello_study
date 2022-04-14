@@ -85,42 +85,57 @@ const Home: NextPage = () => {
     [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
   ]
   const puttables = useMemo(() => {
-    const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
+    // const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
     const candidates: Cell[] = []
     const zeroCell = board
       .flat()
       .filter((x) => x === 0)
-      .map((elm, idx) => {
-        return { row: idx / 10, col: idx % 10 }
+      .filter((elm, idx) => {
+        // return { row: idx / 10, col: idx % 10 }
+        const x = idx / 10
+        const y = idx % 10
+        const temp = board
+          .flat()
+          .filter((x) => x === turnColor)
+          .map((elm, idx) => {
+            const cell = { row: idx / 10, col: idx % 10 }
+            // board[3][3] = 1
+            // board[3][4] = 2
+            // board[4][3] = 2
+            // board[4][4] = 1
+            // 黒のターン時、この場合は[3,2]から見て[4,3]との関係が成り立つので候補となる([1,1]の関係性)
+            return directions.includes([cell.row - x, cell.col - y])
+          })
       })
-    for (const direction of directions) {
-      for (let n = 1; n < 8; n++) {
-        const newX = x + direction[0] * n
-        const newY = y + direction[1] * n
-        if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
-        if (board[newX][newY] === reverseColor) {
-          candidates.push({ row: newX, col: newY })
-        } else if (board[newX][newY] === turnColor) {
-          candidates.push({ row: newX, col: newY })
-          break
-        } else {
-          break
+
+    for (let x = 0; x < 8; x++) {
+      for (let y = 0; y < 8; y++) {
+        if (board[x][y] === 0) {
+          for (const direction of directions) {
+            for (let n = 1; n < 8; n++) {
+              const newX = x + direction[0] * n
+              const newY = y + direction[1] * n
+              if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
+              if (board[newX][newY] === reverseColor) {
+                candidates.push({ row: newX, col: newY })
+              } else if (board[newX][newY] === turnColor) {
+                candidates.push({ row: newX, col: newY })
+                break
+              } else {
+                break
+              }
+            }
+            if (candidates.length > 1) {
+              const lastCell = candidates[candidates.length - 1]
+              if (board[lastCell.row][lastCell.col] === turnColor) {
+                rtnList[x][y] = 1
+              }
+            }
+            candidates.splice(0, candidates.length)
+          }
         }
       }
-      if (candidates.length > 1) {
-        const lastCell = candidates[candidates.length - 1]
-        if (board[lastCell.row][lastCell.col] === turnColor) {
-          rtnList[x][y] = 1
-        }
-      }
-      candidates.splice(0, candidates.length)
     }
-    // for (let x = 0; x < 8; x++) {
-    //   for (let y = 0; y < 8; y++) {
-    //     if (board[x][y] === 0) {
-    //     }
-    //   }
-    // }
     return rtnList
   }, [board, turnColor])
 
