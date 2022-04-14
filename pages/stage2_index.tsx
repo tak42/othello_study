@@ -50,9 +50,19 @@ const Stone = styled.div<{ val: number }>`
   border-radius: 50%;
 `
 
-type Cell = { row: number; col: number }
 const Home: NextPage = () => {
-  const [structure, setStructure] = useState({ row: 8, col: 8 })
+  type Cell = { row: number; col: number }
+  const [structure, setStructure] = useState({ row: 8, col: 8, color: 1, passCnt: 0 })
+  // const [passCount, setPassCount] = useState(0)
+
+  const reverseColor: number = useMemo(() => {
+    return structure.color === 1 ? 2 : 1
+  }, [structure])
+
+  // prettier-ignore
+  const directions: number[][] = [
+    [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
+  ]
 
   const boardCreate = () => {
     const board = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
@@ -72,77 +82,124 @@ const Home: NextPage = () => {
     }
   }, [board])
 
-  const [turnColor, setTurnColor] = useState(1)
+  // const [color, setColor] = useState(1)
 
-  const [passCount, setPassCount] = useState(0)
+  const validate = (target: number, val: [number, number]) => {
+    val.sort()
+    return target <= val[0] && target >= val[1]
+  }
 
-  const reverseColor: number = useMemo(() => {
-    return turnColor === 1 ? 2 : 1
-  }, [turnColor])
-
-  // prettier-ignore
-  const directions: number[][] = [
-    [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
-  ]
   const puttables = useMemo(() => {
-    // const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
-    const candidates: Cell[] = []
-    const zeroCell = board
-      .flat()
-      .filter((x) => x === 0)
-      .filter((elm, idx) => {
-        // return { row: idx / 10, col: idx % 10 }
-        const x = idx / 10
-        const y = idx % 10
-        const temp = board
-          .flat()
-          .filter((x) => x === turnColor)
-          .map((elm, idx) => {
-            const cell = { row: idx / 10, col: idx % 10 }
-            // board[3][3] = 1
-            // board[3][4] = 2
-            // board[4][3] = 2
-            // board[4][4] = 1
-            // 黒のターン時、この場合は[3,2]から見て[4,3]との関係が成り立つので候補となる([1,1]の関係性)
-            return directions.includes([cell.row - x, cell.col - y])
-          })
-      })
+    const color = structure.color
+    const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
+    // const candidates: Cell[] = []
+    const aryEmpty = board.flat().filter((x) => x === 0)
+    const aryColor = board.flat().filter((x) => x === color)
+    // possibles:石を配置可能なCell
+    const possibles = aryEmpty.map((elm, idx) => {
+      const emptyCell: Cell = { row: idx / 10, col: idx % 10 }
+      // 方向性があることを確認
+      const maybe = aryColor
+        .map((elm, idx) => {
+          const cell: Cell = { row: idx / 10, col: idx % 10 }
+          const direction = directions.find(
+            (elm) => elm === [cell.row - emptyCell.row, cell.col - emptyCell.col]
+          )
+          return { direction: direction, cell: cell }
+        })
+        .filter((elm) => elm.direction)
+        .map((elm) => {
+          const colorCell = elm.cell
+          // 間にある石が反対色のみなら候補とする
+          const whileStone = board
+            .flat()
+            .map((elm, idx) => {
+              return { row: idx / 10, col: idx % 10 }
+            })
+            .filter((elm: Cell) => {
+              // 間にあるCellのみ抽出
+              return (
+                validate(elm.row, [emptyCell.row, colorCell.row]) &&
+                validate(elm.col, [emptyCell.col, colorCell.col])
+              )
+            })
+        })
+    })
 
-    for (let x = 0; x < 8; x++) {
-      for (let y = 0; y < 8; y++) {
-        if (board[x][y] === 0) {
-          for (const direction of directions) {
-            for (let n = 1; n < 8; n++) {
-              const newX = x + direction[0] * n
-              const newY = y + direction[1] * n
-              if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
-              if (board[newX][newY] === reverseColor) {
-                candidates.push({ row: newX, col: newY })
-              } else if (board[newX][newY] === turnColor) {
-                candidates.push({ row: newX, col: newY })
-                break
-              } else {
-                break
-              }
-            }
-            if (candidates.length > 1) {
-              const lastCell = candidates[candidates.length - 1]
-              if (board[lastCell.row][lastCell.col] === turnColor) {
-                rtnList[x][y] = 1
-              }
-            }
-            candidates.splice(0, candidates.length)
-          }
-        }
-      }
-    }
+    // for (let x = 0; x < 8; x++) {
+    //   for (let y = 0; y < 8; y++) {
+    //     if (board[x][y] === 0) {
+    //       for (const direction of directions) {
+    //         for (let n = 1; n < 8; n++) {
+    //           const newX = x + direction[0] * n
+    //           const newY = y + direction[1] * n
+    //           if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
+    //           if (board[newX][newY] === reverseColor) {
+    //             candidates.push({ row: newX, col: newY })
+    //           } else if (board[newX][newY] === color) {
+    //             candidates.push({ row: newX, col: newY })
+    //             break
+    //           } else {
+    //             break
+    //           }
+    //         }
+    //         if (candidates.length > 1) {
+    //           const lastCell = candidates[candidates.length - 1]
+    //           if (board[lastCell.row][lastCell.col] === color) {
+    //             rtnList[x][y] = 1
+    //           }
+    //         }
+    //         candidates.splice(0, candidates.length)
+    //       }
+    //     }
+    //   }
+    // }
     return rtnList
-  }, [board, turnColor])
+  }, [board, structure])
 
   const isPass = useMemo(() => {
     const OneDimensional = puttables.flat(2)
     return !OneDimensional.includes(1)
   }, [puttables])
+
+  const resetBoard = () => {
+    setBoard(boardCreate)
+  }
+
+  const onClick = (x: number, y: number) => {
+    const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
+    const candidates: Cell[] = []
+    for (const direction of directions) {
+      for (let n = 1; n < 8; n++) {
+        const newX = x + direction[0] * n
+        const newY = y + direction[1] * n
+        if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
+        if (newBoard[newX][newY] === reverseColor) {
+          candidates.push({ row: newX, col: newY })
+        } else if (newBoard[newX][newY] === color) {
+          candidates.push({ row: newX, col: newY })
+          break
+        } else {
+          break
+        }
+      }
+      if (candidates.length > 1) {
+        const lastCell = candidates[candidates.length - 1]
+        if (newBoard[lastCell.row][lastCell.col] === color) {
+          candidates.splice(candidates.length - 1, 0)
+          for (const cell of candidates) {
+            newBoard[cell.row][cell.col] = color
+          }
+          newBoard[x][y] = color
+        }
+      }
+      candidates.splice(0, candidates.length)
+    }
+    if (newBoard[x][y] === color) {
+      setBoard(newBoard) // boardに変更を反映
+      setColor(reverseColor)
+    }
+  }
 
   useEffect(() => {
     const pCnt: number = isPass ? passCount + 1 : 0
@@ -150,7 +207,7 @@ const Home: NextPage = () => {
     setPassCount(pCnt)
     if (isPass && whiteCount + blackCount < 64) {
       alert('打てるところがないためパスします。')
-      setTurnColor(reverseColor)
+      setColor(reverseColor)
     }
     if (pCnt > 1) {
       alert('パスが２回続いたので終了します。')
@@ -170,43 +227,6 @@ const Home: NextPage = () => {
     }
   }, [whiteCount, blackCount])
 
-  const resetBoard = () => {
-    setBoard(boardCreate)
-  }
-  const onClick = (x: number, y: number) => {
-    const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
-    const candidates: Cell[] = []
-    for (const direction of directions) {
-      for (let n = 1; n < 8; n++) {
-        const newX = x + direction[0] * n
-        const newY = y + direction[1] * n
-        if (newX < 0 || newY < 0 || newX > 7 || newY > 7) break
-        if (newBoard[newX][newY] === reverseColor) {
-          candidates.push({ row: newX, col: newY })
-        } else if (newBoard[newX][newY] === turnColor) {
-          candidates.push({ row: newX, col: newY })
-          break
-        } else {
-          break
-        }
-      }
-      if (candidates.length > 1) {
-        const lastCell = candidates[candidates.length - 1]
-        if (newBoard[lastCell.row][lastCell.col] === turnColor) {
-          candidates.splice(candidates.length - 1, 0)
-          for (const cell of candidates) {
-            newBoard[cell.row][cell.col] = turnColor
-          }
-          newBoard[x][y] = turnColor
-        }
-      }
-      candidates.splice(0, candidates.length)
-    }
-    if (newBoard[x][y] === turnColor) {
-      setBoard(newBoard) // boardに変更を反映
-      setTurnColor(reverseColor)
-    }
-  }
   return (
     <Container>
       <Head>
@@ -216,7 +236,7 @@ const Home: NextPage = () => {
       </Head>
 
       <Main>
-        <h1>{turnColor === 1 ? '黒の番です。' : '白の番です。'}</h1>
+        <h1>{color === 1 ? '黒の番です。' : '白の番です。'}</h1>
         <Grid>
           {board.map((row, x) =>
             row.map((color, y) => (
