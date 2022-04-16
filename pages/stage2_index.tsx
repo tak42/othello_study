@@ -91,41 +91,51 @@ const Home: NextPage = () => {
 
   const puttables = useMemo(() => {
     const color = structure.color
-    const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
+    // const rtnList = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
     // const candidates: Cell[] = []
     const aryEmpty = board.flat().filter((x) => x === 0)
     const aryColor = board.flat().filter((x) => x === color)
     // possibles:石を配置可能なCell
-    const possibles = aryEmpty.map((elm, idx) => {
-      const emptyCell: Cell = { row: idx / 10, col: idx % 10 }
-      // 方向性があることを確認
-      const maybe = aryColor
-        .map((elm, idx) => {
-          const cell: Cell = { row: idx / 10, col: idx % 10 }
-          const direction = directions.find(
-            (elm) => elm === [cell.row - emptyCell.row, cell.col - emptyCell.col]
-          )
-          return { direction: direction, cell: cell }
-        })
-        .filter((elm) => elm.direction)
-        .map((elm) => {
-          const colorCell = elm.cell
-          // 間にある石が反対色のみなら候補とする
-          const whileStone = board
-            .flat()
-            .map((elm, idx) => {
-              return { row: idx / 10, col: idx % 10 }
-            })
-            .filter((elm: Cell) => {
-              // 間にあるCellのみ抽出
-              return (
-                validate(elm.row, [emptyCell.row, colorCell.row]) &&
-                validate(elm.col, [emptyCell.col, colorCell.col])
-              )
-            })
-        })
+    const possibles = aryEmpty
+      .filter((elm, idx) => {
+        const emptyCell: Cell = { row: idx / 10, col: idx % 10 }
+        // 方向性があることを確認
+        const maybe = aryColor
+          .map((elm, idx) => {
+            const cell: Cell = { row: idx / 10, col: idx % 10 }
+            const direction = directions.find(
+              (elm) => elm === [cell.row - emptyCell.row, cell.col - emptyCell.col]
+            )
+            return { direction: direction, cell: cell }
+          })
+          .filter((elm) => elm.direction)
+          .filter((elm) => {
+            const colorCell = elm.cell
+            // 間にある石が反対色のみなら候補とする
+            const whileStone = board
+              .flat()
+              .map((elm, idx) => {
+                return { row: idx / 10, col: idx % 10 }
+              })
+              .filter((elm: Cell) => {
+                // 間にあるCellのみ抽出
+                return (
+                  validate(elm.row, [emptyCell.row, colorCell.row]) &&
+                  validate(elm.col, [emptyCell.col, colorCell.col])
+                )
+              })
+            return whileStone.every((e) => board[e.row][e.col] === reverseColor)
+          })
+        return maybe.length
+      })
+      .map((elm, idx) => [idx / 10, idx % 10])
+    const rtn = [...Array(structure.row)].map((row, x) => {
+      return [...Array(structure.col)].map((col, y) => {
+        return possibles.includes([x, y]) ? 1 : 0
+      })
     })
-
+    console.log(rtn)
+    return rtn
     // for (let x = 0; x < 8; x++) {
     //   for (let y = 0; y < 8; y++) {
     //     if (board[x][y] === 0) {
@@ -154,7 +164,7 @@ const Home: NextPage = () => {
     //     }
     //   }
     // }
-    return rtnList
+    // return rtnList
   }, [board, structure])
 
   const isPass = useMemo(() => {
@@ -167,6 +177,7 @@ const Home: NextPage = () => {
   }
 
   const onClick = (x: number, y: number) => {
+    const color = structure.color
     const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
     const candidates: Cell[] = []
     for (const direction of directions) {
@@ -197,23 +208,29 @@ const Home: NextPage = () => {
     }
     if (newBoard[x][y] === color) {
       setBoard(newBoard) // boardに変更を反映
-      setColor(reverseColor)
+      // setColor(reverseColor)
+      structure.color = reverseColor
+      setStructure(structure)
     }
   }
 
   useEffect(() => {
+    const passCount = structure.passCnt
     const pCnt: number = isPass ? passCount + 1 : 0
     console.log(pCnt)
-    setPassCount(pCnt)
+    // setPassCount(pCnt)
+    structure.passCnt = pCnt
     if (isPass && whiteCount + blackCount < 64) {
       alert('打てるところがないためパスします。')
-      setColor(reverseColor)
+      // setColor(reverseColor)
+      structure.color = reverseColor
     }
     if (pCnt > 1) {
       alert('パスが２回続いたので終了します。')
       whiteCount > blackCount ? alert('白の勝ちです。') : alert('黒の勝ちです。')
       resetBoard()
     }
+    setStructure(structure)
   }, [puttables])
 
   useEffect(() => {
@@ -236,7 +253,7 @@ const Home: NextPage = () => {
       </Head>
 
       <Main>
-        <h1>{color === 1 ? '黒の番です。' : '白の番です。'}</h1>
+        <h1>{structure.color === 1 ? '黒の番です。' : '白の番です。'}</h1>
         <Grid>
           {board.map((row, x) =>
             row.map((color, y) => (
