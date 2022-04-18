@@ -53,13 +53,17 @@ const Stone = styled.div<{ val: number }>`
 const Home: NextPage = () => {
   type Cell = [number, number]
   const [structure, setStructure] = useState({ row: 8, col: 8, passCnt: 0 })
+
   const [color, setColor] = useState(1)
+
   const reverseColor: number = useMemo(() => {
     return color === 1 ? 2 : 1
   }, [color])
+
   const directions: number[][] = [-1, 0, 1]
     .flatMap((elm1, idx, self) => self.map((elm2) => [elm1, elm2]))
     .filter((e) => e[0] !== 0 || e[1] !== 0)
+
   const boardCreate = () => {
     const board = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
     board[3][3] = 1
@@ -68,22 +72,27 @@ const Home: NextPage = () => {
     board[4][4] = 1
     return board
   }
+
   const [board, setBoard] = useState(boardCreate)
+
   const { whiteCount, blackCount } = useMemo(() => {
     return {
       whiteCount: board.flat().filter((x) => x === 2).length,
       blackCount: board.flat().filter((x) => x === 1).length,
     }
   }, [board])
+
   const validate = (target: number, val: [number, number]) => {
     val.sort()
     return target >= val[0] && target <= val[1]
   }
+
   const convertBoard: Cell[] = useMemo(() => {
     return board.flat().map((elm, idx) => {
       return [Math.floor(idx / structure.row), idx % structure.col]
     })
   }, [board, structure])
+
   const directionMap = (target: Cell) => {
     return directions
       .flatMap((e) =>
@@ -95,11 +104,32 @@ const Home: NextPage = () => {
       )
       .filter((e) => e.cell[0] > -1 && e.cell[0] < 8 && e.cell[1] > -1 && e.cell[1] < 8)
   }
+
   const whileCell = (start: Cell, end: Cell) => {
     // startとendの間にある石を配列で返す(方向性が成り立っていることが前提)
     const find = directionMap(start).find((e) => e.cell[0] === end[0] && e.cell[1] === end[1])
     return find !== undefined ? directionMap(start).filter((e) => e.dir === find.dir) : []
   }
+
+  const whileStone = (emptyCell: Cell) => {
+    const aryColor = convertBoard.filter((elm) => board[elm[0]][elm[1]] === color)
+    return aryColor.map((elm) => {
+      const colorCell = elm
+      const stones = whileCell(emptyCell, colorCell)
+        .map((e) => e.cell)
+        .filter(
+          (e) =>
+            validate(e[0], [emptyCell[0], colorCell[0]]) &&
+            validate(e[1], [emptyCell[1], colorCell[1]])
+        )
+      stones.pop()
+      const isEvery = stones.every((e) => {
+        return board[e[0]][e[1]] === reverseColor
+      })
+      return { result: stones.length > 0 && isEvery, Cells: stones }
+    })
+  }
+
   const puttables = useMemo(() => {
     const aryCell: Cell[] = convertBoard
     const aryEmpty = aryCell.filter((elm) => board[elm[0]][elm[1]] === 0)
@@ -125,22 +155,24 @@ const Home: NextPage = () => {
       .filter((elm) => {
         const emptyCell = elm
         // 隣接位置から、同色の石の間はreverseColorのみかどうかを確認
-        const filter = aryColor.map((elm) => {
-          const colorCell = elm
-          const stones = whileCell(emptyCell, colorCell)
-            .map((e) => e.cell)
-            .filter(
-              (e) =>
-                validate(e[0], [emptyCell[0], colorCell[0]]) &&
-                validate(e[1], [emptyCell[1], colorCell[1]])
-            )
-          stones.pop()
-          const res = stones.every((e) => {
-            return board[e[0]][e[1]] === reverseColor
-          })
-          return stones.length > 0 && res
-        })
-        return filter.includes(true)
+        // const filter = aryColor.map((elm) => {
+        //   const colorCell = elm
+        //   const stones = whileCell(emptyCell, colorCell)
+        //     .map((e) => e.cell)
+        //     .filter(
+        //       (e) =>
+        //         validate(e[0], [emptyCell[0], colorCell[0]]) &&
+        //         validate(e[1], [emptyCell[1], colorCell[1]])
+        //     )
+        //   stones.pop()
+        //   const res = stones.every((e) => {
+        //     return board[e[0]][e[1]] === reverseColor
+        //   })
+        //   return stones.length > 0 && res
+        // })
+        return whileStone(emptyCell)
+          .map((e) => e.result)
+          .includes(true)
       })
     return [...Array(structure.row)].map((row, x) => {
       return [...Array(structure.col)].map((col, y) => {
@@ -160,27 +192,13 @@ const Home: NextPage = () => {
 
   const onClick = (x: number, y: number) => {
     puttables
-    // const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
+    const newBoard: number[][] = JSON.parse(JSON.stringify(board)) // boardを直接書き換えないようにコピー作成
     // const candidates: Cell[] = []
     const aryColor = convertBoard.filter((elm) => board[elm[0]][elm[1]] === color)
     const emptyCell: Cell = [x, y]
-    // 隣接位置から、同色の石の間はreverseColorのみかどうかを確認
-    const filter = aryColor.map((elm) => {
-      const colorCell = elm
-      const stones = whileCell(emptyCell, colorCell)
-        .map((e) => e.cell)
-        .filter(
-          (e) =>
-            validate(e[0], [emptyCell[0], colorCell[0]]) &&
-            validate(e[1], [emptyCell[1], colorCell[1]])
-        )
-      stones.pop()
-      const isEvery = stones.every((e) => {
-        return board[e[0]][e[1]] === reverseColor
-      })
-      return { result: stones.length > 0 && isEvery, Cells: stones }
-    })
-
+    // 隣接位置にあるreverse対象の石のリスト
+    const candidates = whileStone(emptyCell).filter((e) => e.result)
+    // [[],[]]
     // return filter.includes(true)
     // for (const direction of directions) {
     //   for (let n = 1; n < 8; n++) {
