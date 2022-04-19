@@ -52,6 +52,9 @@ const Stone = styled.div<{ val: number }>`
 
 const Home: NextPage = () => {
   type Cell = [number, number]
+
+  type Board = { point: Cell; stone: number }[]
+
   const [structure, setStructure] = useState({ row: 8, col: 8, passCnt: 0 })
 
   const [color, setColor] = useState(1)
@@ -65,11 +68,14 @@ const Home: NextPage = () => {
     .filter((e) => e[0] !== 0 || e[1] !== 0)
 
   const boardCreate = () => {
-    const board = [...Array(structure.row)].map(() => [...Array(structure.col)].map(() => 0))
-    board[3][3] = 1
-    board[3][4] = 2
-    board[4][3] = 2
-    board[4][4] = 1
+    const squareCnt = structure.row * structure.col
+    const board: Board = [...Array(squareCnt)].map((elm, idx) => {
+      return { point: [Math.floor(idx / structure.row), idx % structure.col], stone: 0 }
+    })
+    board[27].stone = 1
+    board[28].stone = 2
+    board[35].stone = 2
+    board[36].stone = 1
     return board
   }
 
@@ -77,8 +83,8 @@ const Home: NextPage = () => {
 
   const { whiteCount, blackCount } = useMemo(() => {
     return {
-      whiteCount: board.flat().filter((x) => x === 2).length,
-      blackCount: board.flat().filter((x) => x === 1).length,
+      whiteCount: board.filter((e) => e.stone === 2).length,
+      blackCount: board.filter((e) => e.stone === 1).length,
     }
   }, [board])
 
@@ -87,21 +93,14 @@ const Home: NextPage = () => {
     return target >= val[0] && target <= val[1]
   }
 
-  const convertBoard: Cell[] = useMemo(() => {
-    return board.flat().map((elm, idx) => {
-      return [Math.floor(idx / structure.row), idx % structure.col]
-    })
-  }, [board, structure])
-
-  const directionMap = (target: Cell) => {
+  const directionMap = (target: Cell): { dir: number[]; cell: Cell }[] => {
     return directions
-      .flatMap((e) =>
-        [...Array(8)].map((e2, idx) => {
-          const newX = target[0] + e[0] * (idx + 1)
-          const newY = target[1] + e[1] * (idx + 1)
-          return { dir: e, cell: [newX, newY] }
+      .flatMap((e) => {
+        return [...Array(8)].map((e2, idx) => {
+          const cell: Cell = [target[0] + e[0] * (idx + 1), target[1] + e[1] * (idx + 1)]
+          return { dir: e, cell: cell }
         })
-      )
+      })
       .filter((e) => e.cell[0] > -1 && e.cell[0] < 8 && e.cell[1] > -1 && e.cell[1] < 8)
   }
 
@@ -112,10 +111,10 @@ const Home: NextPage = () => {
   }
 
   const whileStone = (emptyCell: Cell) => {
-    const aryColor = convertBoard.filter((elm) => board[elm[0]][elm[1]] === color)
+    const aryColor = board.filter((e) => e.stone === color)
     return aryColor.map((elm) => {
-      const colorCell = elm
-      const stones = whileCell(emptyCell, colorCell)
+      const colorCell = elm.point
+      const stones: Cell[] = whileCell(emptyCell, colorCell)
         .map((e) => e.cell)
         .filter(
           (e) =>
@@ -124,25 +123,28 @@ const Home: NextPage = () => {
         )
       stones.pop()
       const isEvery = stones.every((e) => {
-        return board[e[0]][e[1]] === reverseColor
+        const find = board.find((x) => x.point === e)
+        return find?.stone === reverseColor
       })
       return { result: stones.length > 0 && isEvery, Cells: stones }
     })
   }
 
   const puttables = useMemo(() => {
-    const aryCell: Cell[] = convertBoard
-    const aryEmpty = aryCell.filter((elm) => board[elm[0]][elm[1]] === 0)
-    const aryColor = aryCell.filter((elm) => board[elm[0]][elm[1]] === color)
-    const aryReverse = aryCell.filter((elm) => board[elm[0]][elm[1]] === reverseColor)
+    // const aryCell: Cell[] = convertBoard
+    // const aryEmpty = board.filter((e) => e.stone === 0)
+    // const aryColor = board.filter((e) => e.stone === color)
+    const aryReverse = board.filter((e) => e.stone === reverseColor)
     // possibles:石を配置可能なCell
-    const possibles = aryEmpty
+    // const possibles = aryEmpty
+    return board
+      .filter((e) => e.stone === 0)
       .filter((elm) => {
-        const emptyCell: Cell = elm
+        const emptyCell: Cell = elm.point
         // ひっくり返す石と隣接しているか？
         return aryReverse
           .map((elm) => {
-            const cell: Cell = elm
+            const cell: Cell = elm.point
             const dx = cell[0] - emptyCell[0]
             const dy = cell[1] - emptyCell[1]
             const direction = directions.find((elm) => {
@@ -153,7 +155,7 @@ const Home: NextPage = () => {
           .includes(true)
       })
       .filter((elm) => {
-        const emptyCell = elm
+        const emptyCell = elm.point
         // 隣接位置から、同色の石の間はreverseColorのみかどうかを確認
         // const filter = aryColor.map((elm) => {
         //   const colorCell = elm
@@ -174,15 +176,15 @@ const Home: NextPage = () => {
           .map((e) => e.result)
           .includes(true)
       })
-    return [...Array(structure.row)].map((row, x) => {
-      return [...Array(structure.col)].map((col, y) => {
-        return possibles.find((elm) => elm[0] === x && elm[1] === y) ? 1 : 0
-      })
-    })
+    // return [...Array(structure.row)].map((row, x) => {
+    //   return [...Array(structure.col)].map((col, y) => {
+    //     return possibles.find((elm) => elm.point[0] === x && elm.point[1] === y) ? 1 : 0
+    //   })
+    // })
   }, [board, color, reverseColor])
 
   const isPass = useMemo(() => {
-    const OneDimensional = puttables.flat(2)
+    const OneDimensional = puttables.flatMap((e) => e.stone)
     return !OneDimensional.includes(1)
   }, [puttables])
 
@@ -271,18 +273,18 @@ const Home: NextPage = () => {
       <Main>
         <h1>{color === 1 ? '黒の番です。' : '白の番です。'}</h1>
         <Grid>
-          {board.map((row, x) =>
-            row.map((color, y) => (
-              <Block
-                key={`${x}-${y}`}
-                onClick={() => (puttables[x][y] === 1 ? onClick(x, y) : false)}
-                val={puttables[x][y]}
-              >
-                {/* {x}, {y} */}
-                {color > 0 && <Stone val={color} />}
-              </Block>
-            ))
-          )}
+          {board.map((elm, idx) => (
+            <Block
+              key={`${elm.point[0]}-${elm.point[1]}`}
+              onClick={() =>
+                puttables[idx].stone === 1 ? onClick(elm.point[0], elm.point[1]) : false
+              }
+              val={puttables[idx].stone}
+            >
+              {/* {x}, {y} */}
+              {color > 0 && <Stone val={color} />}
+            </Block>
+          ))}
         </Grid>
       </Main>
     </Container>
