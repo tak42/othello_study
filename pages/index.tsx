@@ -68,9 +68,6 @@ const Home: NextPage = () => {
     board[28].stone = 2
     board[35].stone = 2
     board[36].stone = 1
-    for (let i = 37; i < 64; i++) {
-      board[i].stone = 2
-    }
     return board
   }
 
